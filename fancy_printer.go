@@ -83,69 +83,71 @@ func PrintArrayAsGrid(incomingTokens []string, simple bool, useColors bool) erro
 	return nil
 }
 
+// returns the input data as an array of columns, the maximum number of columns, or an error
+// if something went squiffy
 func getTagCols(tokens []string) ([][]string, int, error) {
-	sortedTags := go_utils.SortByLength(go_utils.DupStrArray(tokens))
-	numCols, err := getNumTagCols(sortedTags)
+	// terminalWidth, err := getTerminalSizeMock()
+	terminalWidth, err := getTerminalSize()
+
 	if err != nil {
 		return nil, 0, err
 	}
-	// numCols -= 1 // TODO: this is generally wrong. Fix it
-	// numCols -= 1
 
-	cols := make([][]string, numCols)
-	numRows := len(sortedTags)/numCols + 1
-	leftOvers := len(sortedTags) - numCols*numRows
-
-	count := 0
-	for i := 0; i < numCols; i++ {
-		cols[i] = make([]string, numRows+1)
-		localNumRows := numRows
-		if i < leftOvers {
-			localNumRows += 1
+	sortedTokens := go_utils.SortByLength(go_utils.DupStrArray(tokens))
+	oldCols, _ := splitIntoNColumns(sortedTokens, 1)
+	numCols := 2
+	for {
+		newCols, haveEmptyColumns := splitIntoNColumns(sortedTokens, numCols)
+		if haveEmptyColumns {
+			break
 		}
 
-		for j := 0; j <= localNumRows; j++ {
-			tagIndex := i*localNumRows + j
-			if tagIndex >= len(sortedTags) {
-				break
-			}
-			cols[i][j] = sortedTags[tagIndex]
-			count++
+		lengthOfLongestRow := 0
+		for _, column := range newCols {
+			longestInCol := go_utils.FindLongest(column)
+			lengthOfLongestRow += longestInCol
+		}
+
+		lengthOfLongestRow += (numCols - 1) * len(columnSeparator)
+		if lengthOfLongestRow > terminalWidth {
+			break
+		} else {
+			oldCols = newCols
+			numCols++
 		}
 	}
 
-	if leftOvers > 0 {
-		numRows += 1
+	numRows := 0
+	if len(oldCols) > 0 {
+		numRows = len(oldCols[0])
 	}
-	return cols, numRows, nil
+	return oldCols, numRows, nil
 }
 
-func getNumTagCols(sortedTags []string) (int, error) {
-	terminalWidth, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		return 0, err
+func splitIntoNColumns(sortedTokens []string, numCols int) ([][]string, bool) {
+	numRows := len(sortedTokens) / numCols
+	hasLeftovers := (numRows * numCols) < len(sortedTokens)
+	hasEmptyCols := false
+	if hasLeftovers {
+		numRows += 1
 	}
 
-	numCols := 1
-	for {
-		// test if valid. If not, return old
-		total := 0
-		numCols++
-		rowsPerCol := len(sortedTags)/numCols + 1
-		if rowsPerCol < 1 {
-			return numCols - 1, nil
-		}
+	cols := make([][]string, numCols)
+	index := 0
+	for c := 0; c < numCols; c++ {
+		cols[c] = make([]string, numRows)
+		for r := 0; r < numRows; r++ {
+			if index >= len(sortedTokens) {
+				if c < numCols-1 || r == 0 {
+					hasEmptyCols = true
+				}
+				return cols, hasEmptyCols
+			}
 
-		for col := 0; col < numCols; col++ {
-			// want the largest-lengthed string in column, which is the last element
-			tagIndexStart := go_utils.Min(len(sortedTags), (col * rowsPerCol))
-			tagIndexEnd := go_utils.Min((tagIndexStart + rowsPerCol - 1), len(sortedTags))
-			longestInCol := go_utils.FindLongest(sortedTags[tagIndexStart:tagIndexEnd])
-			total += longestInCol
-		}
-		total += (numCols - 1) * len(columnSeparator)
-		if total > terminalWidth {
-			return numCols - 1, nil
+			cols[c][r] = sortedTokens[index]
+			index++
 		}
 	}
+
+	return cols, hasEmptyCols
 }
