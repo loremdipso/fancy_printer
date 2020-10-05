@@ -28,7 +28,6 @@ func TestBasicPrinting(t *testing.T) {
 }
 
 func generateTokens(numTokens, minTokenLength, maxTokenLength int) []string {
-	// tokens := []string{"Ello there, govnah", "Bartholomew", "A", "B", "C"}
 	tokens := make([]string, numTokens)
 	for i := 0; i < numTokens; i++ {
 		tokens[i] = generateToken(minTokenLength, maxTokenLength)
@@ -38,7 +37,6 @@ func generateTokens(numTokens, minTokenLength, maxTokenLength int) []string {
 
 func generateToken(minTokenLength, maxTokenLength int) string {
 	tokenLength := rand.Intn(maxTokenLength-minTokenLength) + minTokenLength
-	// tokenLength = 120
 	token := ""
 	for i := 0; i < tokenLength; i++ {
 		token += "A"

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/loremdipso/go_utils"
 
-	// TODO: this maaaaay be overkill. Just need the terminal size
-	"github.com/fatih/color"
+	// TODO: this maaaaay be overkill.
+	// we really just need the terminal size
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -41,8 +42,8 @@ func PrintArrayAsGrid(incomingTokens []string, simple bool, useColors bool) erro
 		return nil
 	}
 
-	// TODO: we need to duplicate the array since it needs to be sorted.
-	// Make this less fragile
+	// We need to duplicate the array since it needs to be sorted.
+	// TODO: make this less fragile
 	tokens := go_utils.DupStrArray(incomingTokens)
 
 	if simple {
@@ -58,6 +59,7 @@ func PrintArrayAsGrid(incomingTokens []string, simple bool, useColors bool) erro
 
 		for rowIndex := 0; rowIndex < numRows; rowIndex++ {
 			// TODO: use string builder? Or is it fastest to print to output?
+			// for now anything is fine. Performance isn't a terribly important consideration.
 			var line string
 
 			for columnIndex, column := range cols {
@@ -70,6 +72,7 @@ func PrintArrayAsGrid(incomingTokens []string, simple bool, useColors bool) erro
 					} else {
 						line += fmt.Sprintf("%-*s", columnWidth, tag)
 					}
+
 					// only add separator if there's something in the next row
 					if columnIndex < len(cols)-1 && cols[columnIndex+1][rowIndex] != "" {
 						line += columnSeparator
@@ -86,7 +89,6 @@ func PrintArrayAsGrid(incomingTokens []string, simple bool, useColors bool) erro
 // returns the input data as an array of columns, the maximum number of columns, or an error
 // if something went squiffy
 func getTagCols(tokens []string) ([][]string, int, error) {
-	// terminalWidth, err := getTerminalSizeMock()
 	terminalWidth, err := getTerminalSize()
 
 	if err != nil {
